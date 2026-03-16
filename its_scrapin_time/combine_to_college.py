@@ -91,6 +91,10 @@ class RateLimiter:
         self._last = time.monotonic()
 
 
+def is_retryable_http_status(status_code: int) -> bool:
+    return status_code == 429 or 500 <= status_code <= 599
+
+
 def fetch_espn_stats(
     session: requests.Session,
     limiter: RateLimiter,
@@ -105,14 +109,29 @@ def fetch_espn_stats(
         try:
             limiter.wait()
             resp = session.get(url, params=DEFAULT_PARAMS, timeout=timeout_sec)
+            if is_retryable_http_status(resp.status_code):
+                raise requests.HTTPError(
+                    f"HTTP {resp.status_code} (retryable)",
+                    response=resp,
+                )
             resp.raise_for_status()
             return resp.json()
-        except Exception as e:  # noqa: BLE001 - CLI retry path
+        except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as e:
             last_err = e
+            is_retryable = not isinstance(e, requests.HTTPError)
+            if isinstance(e, requests.HTTPError):
+                status = e.response.status_code if e.response is not None else None
+                is_retryable = bool(status is not None and is_retryable_http_status(status))
+
+            if not is_retryable:
+                break
             if attempt >= max_retries:
                 break
-            sleep_s = min(2.0, 0.25 * (2**attempt))
+            sleep_s = min(8.0, 0.5 * (2**attempt))
             time.sleep(sleep_s)
+        except requests.RequestException as e:
+            last_err = e
+            break
 
     raise RuntimeError(f"fetch_failed after {max_retries + 1} attempts: {last_err}")
 
@@ -226,12 +245,22 @@ def main():
     unmatched_rows: List[dict] = []
     valid_ids: List[int] = []
     seen_ids = set()
+    first_row_by_id: Dict[int, dict] = {}
+
+    def get_player_name(row_dict: dict) -> str:
+        for col in ("player_name", "Player", "player", "name"):
+            val = row_dict.get(col)
+            if pd.notna(val) and str(val).strip():
+                return str(val).strip()
+        return ""
 
     for idx, row in df.iterrows():
         athlete_id, reason = parse_numeric_id(row.get(args.id_column))
         if athlete_id is None:
             unmatched_rows.append(
                 {
+                    "athlete_id": "",
+                    "player_name": get_player_name(row.to_dict()),
                     "row_index": idx,
                     "id_column": args.id_column,
                     "id_value": row.get(args.id_column, ""),
@@ -242,6 +271,7 @@ def main():
         if athlete_id not in seen_ids:
             seen_ids.add(athlete_id)
             valid_ids.append(athlete_id)
+            first_row_by_id[athlete_id] = row.to_dict()
 
     print(
         f"[INFO] Loaded {len(df):,} input rows | unique numeric IDs to resolve: {len(valid_ids):,} | "
@@ -255,9 +285,10 @@ def main():
 
     t_fetch0 = time.time()
     for i, athlete_id in enumerate(valid_ids, start=1):
-        if args.print_every_fetch > 0 and i % args.print_every_fetch == 0:
+        processed = i - 1
+        if args.print_every_fetch > 0 and processed > 0 and processed % args.print_every_fetch == 0:
             print(
-                f"[FETCH] {i:,}/{len(valid_ids):,} IDs processed | "
+                f"[FETCH] processed={processed:,}/{len(valid_ids):,} | "
                 f"cache_hits={total_cache_hits:,} fetched={total_network_fetches:,} failures={total_fetch_failures:,} | "
                 f"elapsed={fmt_duration(time.time() - t_fetch0)}"
             )
@@ -281,14 +312,23 @@ def main():
             total_network_fetches += 1
         except Exception as e:  # noqa: BLE001 - CLI failure collection
             total_fetch_failures += 1
+            source_row = first_row_by_id.get(athlete_id, {})
             unmatched_rows.append(
                 {
+                    "athlete_id": athlete_id,
+                    "player_name": get_player_name(source_row),
                     "row_index": "",
                     "id_column": args.id_column,
                     "id_value": athlete_id,
                     "reason": f"fetch_failed: {type(e).__name__}: {e}",
                 }
             )
+
+    print(
+        f"[FETCH] processed={len(valid_ids):,}/{len(valid_ids):,} | "
+        f"cache_hits={total_cache_hits:,} fetched={total_network_fetches:,} failures={total_fetch_failures:,} | "
+        f"elapsed={fmt_duration(time.time() - t_fetch0)}"
+    )
 
     print(f"[FETCH DONE] in {fmt_duration(time.time() - t_fetch0)}")
 
