@@ -226,7 +226,7 @@ def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--title",
-        default="Standardized Combine Metric Effects by Position",
+        default="Standardized Combine Metric Effects on NFL Production Value by Position",
         help="Chart title.",
     )
     parser.add_argument(
