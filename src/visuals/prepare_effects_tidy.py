@@ -12,6 +12,7 @@ import argparse
 from pathlib import Path
 from typing import Iterable
 
+import numpy as np
 import pandas as pd
 import sys
 
@@ -93,6 +94,72 @@ RAW_COMBINE_REQUIRED_COLUMNS = {
 RAW_TARGET_REQUIRED_COLUMNS = {"career_year", "starts", "approximate_value", "snap_share", "seasons_active"}
 
 
+def _looks_like_combine_with_stats(df: pd.DataFrame) -> bool:
+    """Heuristic check for season-level `combine_with_stats.csv` layout."""
+
+    cols = set(df.columns)
+    games_played_cols = [c for c in df.columns if c.endswith("_gamesPlayed")]
+    return {"season_year", "Player", "Pos"}.issubset(cols) and len(games_played_cols) >= 3
+
+
+def _coalesce_player_id(df: pd.DataFrame) -> pd.Series:
+    """Build stable player keys from NFL_id when available, fallback to player name."""
+
+    nfl_id = df.get("NFL_id", pd.Series(index=df.index, dtype=object))
+    nfl_id = nfl_id.astype(str).str.strip()
+    has_id = nfl_id.notna() & nfl_id.ne("") & nfl_id.ne("N/A") & nfl_id.ne("nan")
+
+    player_name = df.get("Player", pd.Series(index=df.index, dtype=object)).astype(str).str.strip()
+    return np.where(has_id, "id:" + nfl_id, "name:" + player_name)
+
+
+def _derive_proxy_modeling_rows_from_combine_stats(df: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate season-level NFL stats into player-level proxy production inputs.
+
+    `combine_with_stats.csv` does not include starts/AV/snap_share, so we construct
+    proxy targets from available games-played signals. This allows the modeling
+    workflow to run end-to-end for exploratory effect-size charts.
+    """
+
+    working = df.copy()
+    working["_player_key"] = _coalesce_player_id(working)
+
+    # Estimate per-season participation from whichever stats family is populated.
+    games_played_cols = [c for c in working.columns if c.endswith("_gamesPlayed")]
+    gp_values = working[games_played_cols].apply(pd.to_numeric, errors="coerce")
+    working["_season_games_played"] = gp_values.max(axis=1, skipna=True).fillna(0.0)
+
+    working["season_year"] = pd.to_numeric(working["season_year"], errors="coerce")
+
+    # Preserve first non-null combine values per player.
+    combine_cols = ["combine_year", "Player", "NFL_id", "Pos", "Ht", "Wt", "40yd", "Vertical", "Bench", "Broad Jump", "3Cone", "Shuttle"]
+    base = (
+        working.sort_values(["_player_key", "season_year"], na_position="last")
+        .groupby("_player_key", as_index=False)
+        .first()[["_player_key", *[c for c in combine_cols if c in working.columns]]]
+    )
+
+    agg = (
+        working.groupby("_player_key", as_index=False)
+        .agg(
+            starts_proxy=("_season_games_played", "sum"),
+            seasons_active=("season_year", "nunique"),
+        )
+    )
+    agg["snap_share"] = (agg["starts_proxy"] / (agg["seasons_active"].replace(0, np.nan) * 17.0)).clip(0.0, 1.0).fillna(0.0)
+    agg["approximate_value"] = (agg["starts_proxy"] * agg["snap_share"]).clip(lower=0.0)
+    agg["production_value"] = (
+        0.35 * np.log1p(agg["starts_proxy"]) +
+        0.30 * np.log1p(agg["approximate_value"]) +
+        0.20 * agg["snap_share"] +
+        0.15 * np.sqrt(agg["seasons_active"].clip(lower=0.0))
+    )
+
+    out = base.merge(agg, on="_player_key", how="inner")
+    out = out.rename(columns={"starts_proxy": "starts"})
+    return out.drop(columns=["_player_key"]) 
+
+
 def _raw_modeling_missing_columns(df: pd.DataFrame) -> list[str]:
     """List missing columns needed to run modeling from raw player data."""
 
@@ -128,6 +195,23 @@ def load_or_generate_model_effects(
 
     missing = _raw_modeling_missing_columns(source_df)
     if missing:
+        if _looks_like_combine_with_stats(source_df):
+            source_df = _derive_proxy_modeling_rows_from_combine_stats(source_df)
+            missing = _raw_modeling_missing_columns(source_df)
+            if not missing:
+                config = PositionModelingConfig(
+                    model_version=model_version,
+                    bootstrap_iterations=bootstrap_iterations,
+                    min_group_size=min_group_size,
+                )
+                run_position_modeling_workflow(df=source_df, output_dir=model_output_dir, config=config)
+                feature_effects_path = model_output_dir / "feature_effects.csv"
+                if not feature_effects_path.exists():
+                    raise FileNotFoundError(
+                        f"Modeling completed but no feature effects were found at {feature_effects_path}"
+                    )
+                return pd.read_csv(feature_effects_path, low_memory=False)
+
         raise ValueError(
             "Input is neither a model-effects file nor valid raw player data. "
             f"Missing raw-data columns: {missing}"

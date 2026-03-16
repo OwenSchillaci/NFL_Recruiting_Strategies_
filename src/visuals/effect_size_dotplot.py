@@ -73,7 +73,7 @@ def build_effect_size_dotplot(
     effects_df: pd.DataFrame,
     heuristic_version: str,
     model_version: str,
-    chart_title: str = "Standardized Combine Metric Effects by Position",
+    chart_title: str = "Standardized Combine Metric Effects on NFL Production Value by Position",
     ncols: int = 3,
 ) -> go.Figure:
     """Construct the small-multiple effect-size dotplot figure."""
