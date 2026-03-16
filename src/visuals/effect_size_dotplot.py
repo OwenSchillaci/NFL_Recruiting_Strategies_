@@ -170,8 +170,14 @@ def build_effect_size_dotplot(
         template="plotly_white",
         width=420 * ncols,
         height=max(320 * nrows, 420),
-        legend={"orientation": "h", "y": 1.02, "x": 1.0, "xanchor": "right"},
-        margin={"l": 70, "r": 40, "t": 120, "b": 55},
+        legend={
+            "orientation": "h",
+            "y": -0.14,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+        },
+        margin={"l": 70, "r": 40, "t": 150, "b": 105},
     )
     fig.update_xaxes(title_text="Standardized marginal effect")
 
