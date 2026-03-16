@@ -32,7 +32,27 @@ python analysis/visualizations/quadrant_overperformers.py
 
 ## Standardized effect-size dotplot workflow
 
-`src/visuals/effect_size_dotplot.py` expects a **tidy five-column effect table** with:
+`src/visuals/effect_size_dotplot.py` builds a small-multiples effect-size chart that summarizes how each standardized combine metric relates to modeled NFL production value **within each position group**.
+
+### What this visualization is doing
+
+- Splits the figure into one panel per `position_group`.
+- Plots one dot per combine `metric`, where the x-position is the `estimate` (standardized marginal effect size).
+- Draws horizontal uncertainty bars from `ci_low` to `ci_high` for each metric.
+- Colors dots by sign: blue for positive effects and red for negative effects.
+- Sorts metrics inside each panel by descending `abs(estimate)` so the strongest effects are shown first.
+- Draws a vertical reference line at zero, making it easy to see positive vs. negative associations.
+
+### How to read it (what it means)
+
+- **Further from zero** means a larger estimated relationship (in standardized units) between that combine metric and production value for that position.
+- **Crossing zero in the interval** suggests higher uncertainty about direction for that metric.
+- **Panel-specific ranking** highlights which drills appear most influential for each position group, without implying the same ranking applies across all positions.
+- Because estimates are standardized and position-specific, the plot is best interpreted as a **relative signal-strength view** rather than a direct causal statement.
+
+### Required input format
+
+`effect_size_dotplot.py` expects a tidy five-column effect table with:
 
 - `position_group`: modeled position bucket used for paneling
 - `metric`: combine metric label shown on the y-axis
