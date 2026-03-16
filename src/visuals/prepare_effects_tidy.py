@@ -13,10 +13,7 @@ from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
-import sys
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+
 from src.modeling.position_models import PositionModelingConfig, run_position_modeling_workflow
 
 REQUIRED_MODEL_COLUMNS = {
