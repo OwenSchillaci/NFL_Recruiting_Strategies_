@@ -15,7 +15,7 @@ from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 
-MIN_FONT_SIZE = 10
+MIN_FONT_SIZE = 8
 PAGE_SIZE = LETTER
 MARGIN = 1 * inch
 
@@ -99,7 +99,7 @@ def build_onepager(
     cutoff_date = _derive_data_cutoff_date(predictions_csv, data_cutoff_date)
 
     layout = LayoutSpec()
-    body_font_size = 10
+    body_font_size = 9
     footer_font_size = 10
     _preflight_layout(layout, body_font_size, footer_font_size)
 
@@ -108,17 +108,9 @@ def build_onepager(
         temp_base = Path(tmp.name)
 
     c = canvas.Canvas(str(temp_base), pagesize=PAGE_SIZE)
-    
 
     top_y = layout.page_height - layout.margin - (3.5 * inch)
     bottom_y = layout.page_height - layout.margin - (6.25 * inch)
-
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(layout.margin, top_y + (3.38 * inch), "Effect-Size Panel")
-    c.drawString(layout.margin, bottom_y + (2.48 * inch), "Diagnostics Mini-Panel")
-
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(layout.margin, layout.margin + 108, "Model + Heuristic Summary")
 
     c.setFont("Helvetica", body_font_size)
     lines = [
@@ -137,8 +129,8 @@ def build_onepager(
 
     base_reader = PdfReader(str(temp_base))
     base_page = base_reader.pages[0]
-    _merge_panel(base_page, effect_panel_pdf, x=layout.margin, y=top_y, width=layout.content_width, height=3.25 * inch)
-    _merge_panel(base_page, diagnostics_panel_pdf, x=layout.margin, y=bottom_y, width=layout.content_width, height=2.35 * inch)
+    _merge_panel(base_page, effect_panel_pdf, x=0, y=top_y, width=layout.page_width, height=3.25 * inch)
+    _merge_panel(base_page, diagnostics_panel_pdf, x=0, y=bottom_y, width=layout.page_width, height=2.35 * inch)
 
     writer = PdfWriter()
     writer.add_page(base_page)

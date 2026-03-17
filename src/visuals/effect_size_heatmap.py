@@ -31,6 +31,14 @@ from src.visuals.effect_size_dotplot import prepare_effects_for_plot
 
 REQUIRED_COLUMNS = {"position_group", "metric", "estimate", "ci_low", "ci_high"}
 
+# Explicit diverging palette avoids renderer-specific quirks with named colorscales
+# when exporting to PDF and then embedding in the one-pager.
+DIVERGING_BLUE_RED_SCALE = [
+    [0.0, "#2166ac"],
+    [0.5, "#f7f7f7"],
+    [1.0, "#b2182b"],
+]
+
 
 def _validate_input_columns(effects_df: pd.DataFrame) -> None:
     missing = REQUIRED_COLUMNS - set(effects_df.columns)
@@ -87,8 +95,7 @@ def build_effect_size_heatmap(
             zmid=0,
             zmin=-z_limit,
             zmax=z_limit,
-            colorscale="RdBu",
-            reversescale=True,
+            colorscale=DIVERGING_BLUE_RED_SCALE,
             xgap=1,
             ygap=1,
             colorbar={"title": "Std. marginal effect"},
