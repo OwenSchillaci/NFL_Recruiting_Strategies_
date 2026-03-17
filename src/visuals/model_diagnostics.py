@@ -213,21 +213,23 @@ def build_model_diagnostics_figure(
     fig.update_layout(
         title={"text": title, "x": 0.02},
         template="plotly_white",
-        # Export with a wide landscape aspect so the diagnostics panel fills
-        # the full-width one-pager slot when merged into the PDF.
-        width=2400,
-        height=1000,
-        font={"size": 10},
+        # Export with a more compact landscape aspect ratio so the panel
+        # remains readable when embedded into static reports.
+        width=1800,
+        height=1300,
+        font={"size": 18},
         legend={"orientation": "h", "y": 1.06, "x": 0.01},
         margin={"l": 60, "r": 30, "t": 110, "b": 60},
     )
 
-    fig.update_xaxes(title_text="Predicted (bin mean)", row=1, col=1)
-    fig.update_yaxes(title_text="Observed (bin mean)", row=1, col=1)
-    fig.update_yaxes(title_text="Residual", row=2, col=1)
-    fig.update_xaxes(title_text="Position", tickangle=-40, row=2, col=1)
-    fig.update_xaxes(title_text="Position", tickangle=-40, row=2, col=2)
-    fig.update_yaxes(title_text="MAE", row=2, col=2)
+    fig.update_annotations(font={"size": 20})
+
+    fig.update_xaxes(title_text="Predicted (bin mean)", title_font={"size": 22}, tickfont={"size": 16}, row=1, col=1)
+    fig.update_yaxes(title_text="Observed (bin mean)", title_font={"size": 22}, tickfont={"size": 16}, row=1, col=1)
+    fig.update_yaxes(title_text="Residual", title_font={"size": 22}, tickfont={"size": 16}, row=2, col=1)
+    fig.update_xaxes(title_text="Position", title_font={"size": 22}, tickfont={"size": 15}, tickangle=-40, row=2, col=1)
+    fig.update_xaxes(title_text="Position", title_font={"size": 22}, tickfont={"size": 15}, tickangle=-40, row=2, col=2)
+    fig.update_yaxes(title_text="MAE", title_font={"size": 22}, tickfont={"size": 16}, row=2, col=2)
     fig.update_xaxes(range=[2.2, 4.4], row=1, col=1)
     fig.update_yaxes(range=[lo, hi], row=1, col=1)
 
