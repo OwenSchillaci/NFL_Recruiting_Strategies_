@@ -8,9 +8,9 @@ columns:
     - ci_low
     - ci_high
 
-The resulting chart uses a shared x-axis, panel-wise metric sorting by absolute
-effect size, uncertainty intervals, and color encoding for positive/negative
-marginal effects.
+The resulting chart uses a shared x-axis, a globally consistent metric order,
+uncertainty intervals, and color encoding for positive/negative marginal
+effects.
 """
 
 from __future__ import annotations
@@ -40,10 +40,10 @@ def _validate_input_columns(effects_df: pd.DataFrame) -> None:
 
 
 def prepare_effects_for_plot(effects_df: pd.DataFrame) -> pd.DataFrame:
-    """Return a plotting-ready DataFrame with panel-specific metric order.
+    """Return a plotting-ready DataFrame with globally consistent metric order.
 
-    Metrics are sorted within each position group by descending absolute effect
-    size (`abs(estimate)`).
+    Metrics are sorted once using overall descending mean absolute effect size
+    (`mean(abs(estimate))`), then alphabetically as a tie-breaker.
     """
 
     _validate_input_columns(effects_df)
@@ -53,15 +53,13 @@ def prepare_effects_for_plot(effects_df: pd.DataFrame) -> pd.DataFrame:
     clean_df["metric"] = clean_df["metric"].astype(str)
 
     clean_df["abs_estimate"] = clean_df["estimate"].abs()
-    clean_df = clean_df.sort_values(
-        by=["position_group", "abs_estimate", "metric"],
-        ascending=[True, False, True],
-        kind="mergesort",
+    metric_order = (
+        clean_df.groupby("metric", as_index=False)["abs_estimate"]
+        .mean()
+        .sort_values(by=["abs_estimate", "metric"], ascending=[False, True])
     )
-
-    clean_df["metric_order"] = (
-        clean_df.groupby("position_group").cumcount().astype(int)
-    )
+    metric_rank = {metric: idx for idx, metric in enumerate(metric_order["metric"])}
+    clean_df["metric_order"] = clean_df["metric"].map(metric_rank).astype(int)
     clean_df["effect_sign"] = clean_df["estimate"].ge(0).map(
         {True: "positive", False: "negative"}
     )
@@ -97,13 +95,18 @@ def build_effect_size_dotplot(
     )
 
     legend_seen: set[str] = set()
+    metric_order = (
+        plot_df[["metric", "metric_order"]]
+        .drop_duplicates()
+        .sort_values("metric_order")["metric"]
+        .tolist()
+    )
 
     for index, position in enumerate(positions):
         row = (index // ncols) + 1
         col = (index % ncols) + 1
 
         panel_df = plot_df.loc[plot_df["position_group"] == position].copy()
-        metric_order = panel_df.sort_values("metric_order")["metric"].tolist()
         panel_df["metric"] = pd.Categorical(
             panel_df["metric"],
             categories=metric_order,
