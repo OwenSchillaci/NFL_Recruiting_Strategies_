@@ -169,6 +169,7 @@ def _raw_modeling_missing_columns(df: pd.DataFrame) -> list[str]:
 
     # Target can come from precomputed production_value OR scoring inputs.
     if "production_value" not in cols:
+        print("got here")
         missing |= RAW_TARGET_REQUIRED_COLUMNS - cols
 
     return sorted(missing)

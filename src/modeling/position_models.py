@@ -80,7 +80,9 @@ class PositionModelingWorkflow:
         return pos_series.astype(str).map(POSITION_GROUP_MAP).fillna("OTHER")
 
     def _prepare_target(self, df: pd.DataFrame) -> pd.Series:
+
         if "production_value" in df.columns:
+            print("production value already in columns")
             return pd.to_numeric(df["production_value"], errors="coerce")
 
         required = list(self.scoring_config["components"].keys()) + [
@@ -93,11 +95,12 @@ class PositionModelingWorkflow:
                 "Input dataframe must include either 'production_value' or scoring inputs. "
                 f"Missing: {missing}"
             )
-
         scored = compute_production_value_batch(df.copy(), self.scoring_config)
         return pd.to_numeric(scored["production_value"], errors="coerce")
 
     def _preprocess(self, df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
+        if "production_value" in df.columns:
+            print("production value in columns")
         working = df.copy()
         if "combine_year" in working.columns:
             years = pd.to_numeric(working["combine_year"], errors="coerce")
@@ -328,5 +331,6 @@ def run_position_modeling_workflow(
     scoring_config_path: str | Path | None = None,
 ) -> dict[str, pd.DataFrame]:
     """Convenience wrapper for pipeline execution."""
+    print(df.columns)
     workflow = PositionModelingWorkflow(scoring_config_path=scoring_config_path, config=config)
     return workflow.run(df=df, output_dir=output_dir)

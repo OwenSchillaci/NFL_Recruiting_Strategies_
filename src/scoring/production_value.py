@@ -183,8 +183,10 @@ def compute_production_value_batch(df: pd.DataFrame, config: Mapping[str, Any]) 
     time_factor = _time_decay_factor(career_year, cfg["time_decay"])
 
     score = pd.Series(np.zeros(len(working)), index=working.index, dtype=float)
-
+    print("got here")
     for metric, spec in cfg["components"].items():
+        print("metric: ", metric)
+        print("length of metric: ", len(working[metric]))
         transformed = _apply_transform(working[metric], spec["transform"])
         weights = working["Pos"].apply(lambda pos: _position_weight_for_metric(metric, str(pos), cfg))
         score = score + transformed * weights
