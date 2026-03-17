@@ -108,10 +108,7 @@ def build_onepager(
         temp_base = Path(tmp.name)
 
     c = canvas.Canvas(str(temp_base), pagesize=PAGE_SIZE)
-    c.setTitle("NFL Recruiting Strategy One-Pager")
-
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(layout.margin, layout.page_height - layout.margin + 16, "NFL Recruiting Strategy One-Pager")
+    
 
     top_y = layout.page_height - layout.margin - (3.5 * inch)
     bottom_y = layout.page_height - layout.margin - (6.25 * inch)
@@ -125,23 +122,15 @@ def build_onepager(
 
     c.setFont("Helvetica", body_font_size)
     lines = [
-        "Prediction model: position-group ridge regression on standardized combine metrics",
-        "(speed, jumps, agility, size), with position-aware median imputation + missingness flags.",
-        "NFL production heuristic: weighted composite of starts, approximate value, snap share,",
-        "and seasons active to define target production_value.",
+        "Prediction model: position group ridge regression on standardized combine metrics",
+        "(speed, jumps, agility, size)",
+        "NFL production value heuristic: weighted composite of starts, approximate value, snap share,",
+        "and seasons played.",
     ]
     y = layout.margin + 94
     for line in lines:
         c.drawString(layout.margin, y, line)
         y -= 12
-
-    c.setFont("Helvetica", footer_font_size)
-    footer = (
-        f"Data cutoff: {cutoff_date}   |   "
-        f"Heuristic version: {metadata.get('heuristic_version', 'unknown')}   |   "
-        f"Model version: {metadata.get('model_version', 'unknown')}"
-    )
-    c.drawString(layout.margin, layout.margin - 10, footer)
 
     c.showPage()
     c.save()

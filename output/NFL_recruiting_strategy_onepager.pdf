@@ -56,26 +56,22 @@ endobj
 endobj
 5 0 obj
 <<
-/Length 578207
+/Length 577892
 >>
 stream
 q
 q
 1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
-BT /F2 14 Tf 16.8 TL ET
-BT 1 0 0 1 72 736 Tm (NFL Recruiting Strategy One-Pager) Tj T* ET
 BT /F2 11 Tf 13.2 TL ET
 BT 1 0 0 1 72 711.36 Tm (Effect-Size Panel) Tj T* ET
 BT 1 0 0 1 72 448.56 Tm (Diagnostics Mini-Panel) Tj T* ET
 BT /F2 11 Tf 13.2 TL ET
 BT 1 0 0 1 72 180 Tm (Model + Heuristic Summary) Tj T* ET
 BT /F1 10 Tf 12 TL ET
-BT 1 0 0 1 72 166 Tm (Prediction model: position-group ridge regression on standardized combine metrics) Tj T* ET
-BT 1 0 0 1 72 154 Tm (\(speed, jumps, agility, size\), with position-aware median imputation + missingness flags.) Tj T* ET
-BT 1 0 0 1 72 142 Tm (NFL production heuristic: weighted composite of starts, approximate value, snap share,) Tj T* ET
-BT 1 0 0 1 72 130 Tm (and seasons active to define target production_value.) Tj T* ET
-BT /F1 10 Tf 12 TL ET
-BT 1 0 0 1 72 62 Tm (Data cutoff: 2025-12-31   |   Heuristic version: v1.0.0   |   Model version: v1.0.0) Tj T* ET
+BT 1 0 0 1 72 166 Tm (Prediction model: position group ridge regression on standardized combine metrics) Tj T* ET
+BT 1 0 0 1 72 154 Tm (\(speed, jumps, agility, size\)) Tj T* ET
+BT 1 0 0 1 72 142 Tm (NFL production value heuristic: weighted composite of starts, approximate value, snap share,) Tj T* ET
+BT 1 0 0 1 72 130 Tm (and seasons played.) Tj T* ET
  
 
 Q
@@ -18322,31 +18318,31 @@ xref
 0000000113 00000 n 
 0000000162 00000 n 
 0000000577 00000 n 
-0000578838 00000 n 
-0000578918 00000 n 
-0000579005 00000 n 
-0000579044 00000 n 
-0000579083 00000 n 
-0000579162 00000 n 
-0000579241 00000 n 
-0000579322 00000 n 
-0000579401 00000 n 
-0000579482 00000 n 
-0000579570 00000 n 
-0000579651 00000 n 
-0000579730 00000 n 
-0000579772 00000 n 
-0000579880 00000 n 
-0000579993 00000 n 
-0000580138 00000 n 
-0000580911 00000 n 
-0000581160 00000 n 
-0000588332 00000 n 
-0000588748 00000 n 
-0000588893 00000 n 
-0000589630 00000 n 
-0000589879 00000 n 
-0000597374 00000 n 
+0000578523 00000 n 
+0000578603 00000 n 
+0000578690 00000 n 
+0000578729 00000 n 
+0000578768 00000 n 
+0000578847 00000 n 
+0000578926 00000 n 
+0000579007 00000 n 
+0000579086 00000 n 
+0000579167 00000 n 
+0000579255 00000 n 
+0000579336 00000 n 
+0000579415 00000 n 
+0000579457 00000 n 
+0000579565 00000 n 
+0000579678 00000 n 
+0000579823 00000 n 
+0000580596 00000 n 
+0000580845 00000 n 
+0000588017 00000 n 
+0000588433 00000 n 
+0000588578 00000 n 
+0000589315 00000 n 
+0000589564 00000 n 
+0000597059 00000 n 
 trailer
 <<
 /Size 31
@@ -18354,5 +18350,5 @@ trailer
 /Info 1 0 R
 >>
 startxref
-597803
+597488
 %%EOF
