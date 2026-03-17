@@ -213,11 +213,13 @@ def build_model_diagnostics_figure(
     fig.update_layout(
         title={"text": title, "x": 0.02},
         template="plotly_white",
-        width=1400,
-        height=900,
+        # Export with a wide landscape aspect so the diagnostics panel fills
+        # the full-width one-pager slot when merged into the PDF.
+        width=2400,
+        height=1000,
         font={"size": 10},
         legend={"orientation": "h", "y": 1.06, "x": 0.01},
-        margin={"l": 70, "r": 40, "t": 120, "b": 70},
+        margin={"l": 60, "r": 30, "t": 110, "b": 60},
     )
 
     fig.update_xaxes(title_text="Predicted (bin mean)", row=1, col=1)
