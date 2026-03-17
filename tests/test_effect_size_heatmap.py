@@ -28,25 +28,22 @@ class EffectSizeHeatmapTests(unittest.TestCase):
         )
         self.assertEqual(metric_order, ["size", "speed"])
 
-    def test_heatmap_contains_matrix_and_uncertainty_overlay(self):
+    def test_heatmap_contains_only_simple_matrix(self):
         fig = build_effect_size_heatmap(
             effects_df=self.effects,
             heuristic_version="h1",
             model_version="m1",
         )
 
-        self.assertEqual(len(fig.data), 2)
+        self.assertEqual(len(fig.data), 1)
         heatmap = fig.data[0]
-        markers = fig.data[1]
 
         self.assertEqual(list(heatmap.x), ["RB", "WR"])
         self.assertEqual(list(heatmap.y), ["size", "speed"])
         self.assertEqual(heatmap.z[0][0], -0.40)
         self.assertEqual(heatmap.z[1][1], 0.50)
-        self.assertEqual(markers.name, "CI includes zero")
-        self.assertEqual(len(markers.x), 1)
-        self.assertEqual(markers.x[0], "RB")
-        self.assertEqual(markers.y[0], "speed")
+        self.assertEqual(heatmap.xgap, 1)
+        self.assertEqual(heatmap.ygap, 1)
 
 
 if __name__ == "__main__":

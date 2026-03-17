@@ -8,8 +8,8 @@ columns:
     - ci_low
     - ci_high
 
-Cells encode effect-size estimates while an overlaid marker indicates confidence
-intervals that include zero.
+Cells encode effect-size estimates in a simple grid with clear boundaries
+between cells.
 """
 
 from __future__ import annotations
@@ -74,18 +74,6 @@ def build_effect_size_heatmap(
         .reindex(index=metric_order, columns=positions)
     )
 
-    uncertainty_df = (
-        plot_df.assign(ci_includes_zero=lambda d: (d["ci_low"] <= 0) & (d["ci_high"] >= 0))
-        .pivot_table(
-            index="metric",
-            columns="position_group",
-            values="ci_includes_zero",
-            aggfunc="max",
-        )
-        .reindex(index=metric_order, columns=positions)
-        .fillna(False)
-    )
-
     z_values = matrix_df.to_numpy(dtype=float)
     max_abs = float(np.nanmax(np.abs(z_values))) if np.isfinite(z_values).any() else 1.0
     z_limit = max(0.1, max_abs)
@@ -101,6 +89,8 @@ def build_effect_size_heatmap(
             zmax=z_limit,
             colorscale="RdBu",
             reversescale=True,
+            xgap=1,
+            ygap=1,
             colorbar={"title": "Std. marginal effect"},
             hovertemplate=(
                 "Position: %{x}<br>"
@@ -109,23 +99,6 @@ def build_effect_size_heatmap(
             ),
         )
     )
-
-    marker_y, marker_x = np.where(uncertainty_df.to_numpy(dtype=bool))
-    if marker_x.size:
-        fig.add_trace(
-            go.Scatter(
-                x=[positions[idx] for idx in marker_x],
-                y=[metric_order[idx] for idx in marker_y],
-                mode="markers",
-                marker={"symbol": "x", "size": 10, "color": "#1f1f1f", "line": {"width": 1}},
-                name="CI includes zero",
-                hovertemplate=(
-                    "Position: %{x}<br>"
-                    "Metric: %{y}<br>"
-                    "Uncertainty marker: CI includes zero<extra></extra>"
-                ),
-            )
-        )
 
     subtitle = f"Heuristic version: {heuristic_version} · Model version: {model_version}"
     fig.update_layout(
