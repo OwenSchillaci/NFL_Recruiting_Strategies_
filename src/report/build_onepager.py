@@ -65,8 +65,8 @@ def _merge_panel(base_page, panel_pdf: Path, x: float, y: float, width: float, h
     panel_w = float(panel.mediabox.width)
     panel_h = float(panel.mediabox.height)
     scale = min(width / panel_w, height / panel_h)
-    panel.add_transformation(Transformation().scale(scale, scale).translate(tx=x, ty=y))
-    base_page.merge_page(panel)
+    transform = Transformation().scale(scale, scale).translate(tx=x, ty=y)
+    base_page.merge_transformed_page(panel, transform)
 
 
 def _preflight_pdf(output_pdf: Path) -> None:
