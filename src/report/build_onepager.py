@@ -118,6 +118,7 @@ def build_onepager(
         "(speed, jumps, agility, size)",
         "NFL production value heuristic: weighted composite of starts, approximate value, snap share,",
         "and seasons played.",
+        "If the heatmap legend did not come out correctly, red means positive impact on NFL production, blue means negative impact on NFL production"
     ]
     y = layout.margin + 94
     for line in lines:
@@ -129,8 +130,11 @@ def build_onepager(
 
     base_reader = PdfReader(str(temp_base))
     base_page = base_reader.pages[0]
-    _merge_panel(base_page, effect_panel_pdf, x=0, y=top_y, width=layout.page_width, height=3.25 * inch)
+    # Merge the diagnostics panel first so the effect-size panel is merged last.
+    # Plotly heatmap PDFs can carry gradient resources that are occasionally
+    # flattened incorrectly when another PDF page is merged afterwards.
     _merge_panel(base_page, diagnostics_panel_pdf, x=0, y=bottom_y, width=layout.page_width, height=2.35 * inch)
+    _merge_panel(base_page, effect_panel_pdf, x=0, y=top_y, width=layout.page_width, height=3.25 * inch)
 
     writer = PdfWriter()
     writer.add_page(base_page)

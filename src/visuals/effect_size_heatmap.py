@@ -121,17 +121,19 @@ def build_effect_size_heatmap(
     return fig
 
 
-def export_figure(fig: go.Figure, output_stem: Path) -> tuple[Path, Path]:
-    """Export the figure to both SVG and PDF vector formats."""
+def export_figure(fig: go.Figure, output_stem: Path) -> tuple[Path, Path, Path]:
+    """Export the figure to PNG, SVG, and PDF formats."""
 
     output_stem.parent.mkdir(parents=True, exist_ok=True)
+    png_path = output_stem.with_suffix(".png")
     svg_path = output_stem.with_suffix(".svg")
     pdf_path = output_stem.with_suffix(".pdf")
 
+    fig.write_image(str(png_path), scale=2)
     fig.write_image(str(svg_path))
     fig.write_image(str(pdf_path))
 
-    return svg_path, pdf_path
+    return png_path, svg_path, pdf_path
 
 
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
@@ -173,7 +175,8 @@ def main(argv: Iterable[str] | None = None) -> None:
         model_version=args.model_version,
         chart_title=args.title,
     )
-    svg_path, pdf_path = export_figure(fig, args.output_stem)
+    png_path, svg_path, pdf_path = export_figure(fig, args.output_stem)
+    print(f"Saved chart: {png_path}")
     print(f"Saved chart: {svg_path}")
     print(f"Saved chart: {pdf_path}")
 

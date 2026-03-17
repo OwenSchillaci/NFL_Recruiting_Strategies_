@@ -228,7 +228,7 @@ def build_model_diagnostics_figure(
     fig.update_xaxes(title_text="Position", tickangle=-40, row=2, col=1)
     fig.update_xaxes(title_text="Position", tickangle=-40, row=2, col=2)
     fig.update_yaxes(title_text="MAE", row=2, col=2)
-    fig.update_xaxes(range=[lo, hi], row=1, col=1)
+    fig.update_xaxes(range=[2.2, 4.4], row=1, col=1)
     fig.update_yaxes(range=[lo, hi], row=1, col=1)
 
     return fig, metrics, warnings

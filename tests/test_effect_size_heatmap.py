@@ -1,8 +1,10 @@
+import tempfile
 import unittest
+from pathlib import Path
 
 import pandas as pd
 
-from src.visuals.effect_size_heatmap import build_effect_size_heatmap
+from src.visuals.effect_size_heatmap import build_effect_size_heatmap, export_figure
 from src.visuals.effect_size_dotplot import prepare_effects_for_plot
 
 
@@ -27,6 +29,20 @@ class EffectSizeHeatmapTests(unittest.TestCase):
             .tolist()
         )
         self.assertEqual(metric_order, ["size", "speed"])
+
+
+    def test_export_figure_writes_png_svg_pdf(self):
+        fig = build_effect_size_heatmap(
+            effects_df=self.effects,
+            heuristic_version="h1",
+            model_version="m1",
+        )
+
+        with tempfile.TemporaryDirectory() as td:
+            png_path, svg_path, pdf_path = export_figure(fig, Path(td) / "heatmap")
+            self.assertTrue(png_path.exists())
+            self.assertTrue(svg_path.exists())
+            self.assertTrue(pdf_path.exists())
 
     def test_heatmap_contains_only_simple_matrix(self):
         fig = build_effect_size_heatmap(
