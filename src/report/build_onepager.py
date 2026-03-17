@@ -150,21 +150,35 @@ def build_onepager(
     return output_pdf
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--effect-panel-pdf", type=Path, default=Path("outputs/visualizations/effect_size_dotplot.pdf"))
+    parser.add_argument(
+        "--effect-panel-source",
+        choices=("dotplot", "heatmap"),
+        default="dotplot",
+        help="Default effect-size panel type when --effect-panel-pdf is not provided.",
+    )
+    parser.add_argument(
+        "--effect-panel-pdf",
+        type=Path,
+        default=None,
+        help="Optional explicit effect-size panel PDF path.",
+    )
     parser.add_argument("--diagnostics-panel-pdf", type=Path, default=Path("outputs/visualizations/model_diagnostics.pdf"))
     parser.add_argument("--metadata-json", type=Path, default=Path("outputs/modeling/metadata.json"))
     parser.add_argument("--predictions-csv", type=Path, default=Path("outputs/modeling/predictions.csv"))
     parser.add_argument("--data-cutoff-date", default=None)
     parser.add_argument("--output-pdf", type=Path, default=Path("output/NFL_recruiting_strategy_onepager.pdf"))
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def main() -> None:
     args = parse_args()
+    default_effect_panel = Path(
+        f"outputs/visualizations/effect_size_{args.effect_panel_source}.pdf"
+    )
     build_onepager(
-        effect_panel_pdf=args.effect_panel_pdf,
+        effect_panel_pdf=args.effect_panel_pdf or default_effect_panel,
         diagnostics_panel_pdf=args.diagnostics_panel_pdf,
         metadata_json=args.metadata_json,
         predictions_csv=args.predictions_csv,
