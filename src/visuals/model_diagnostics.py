@@ -135,17 +135,15 @@ def build_model_diagnostics_figure(
 
     fig = make_subplots(
         rows=2,
-        cols=3,
-        specs=[[{"colspan": 2}, None, {}], [{}, {}, {}]],
+        cols=2,
+        specs=[[{"colspan": 2}, None], [{}, {}]],
         subplot_titles=(
             "Calibration by Position (95% CI)",
-            "Metrics + Alerts",
-            "Residual vs Prediction",
             "Residual by Position",
             "MAE by Position",
         ),
-        horizontal_spacing=0.06,
-        vertical_spacing=0.15,
+        horizontal_spacing=0.08,
+        vertical_spacing=0.18,
     )
 
     cal = _calibration_by_position(predictions, calibration_bins)
@@ -174,49 +172,28 @@ def build_model_diagnostics_figure(
             col=1,
         )
 
-    vals = pd.concat([predictions["predicted_production_value"], predictions["target_production_value"]]).dropna()
-    lo, hi = (vals.min(), vals.max()) if not vals.empty else (0, 1)
+    vals = predictions["predicted_production_value"].dropna()
+    if vals.empty:
+        lo, hi = (0.0, 1.0)
+    else:
+        span = float(vals.max() - vals.min())
+        pad = max(0.1, span * 0.08)
+        lo = float(vals.min() - pad)
+        hi = float(vals.max() + pad)
     fig.add_trace(
         go.Scatter(x=[lo, hi], y=[lo, hi], mode="lines", line={"dash": "dash", "color": "#444"}, name="Perfect calibration"),
         row=1,
         col=1,
     )
 
-    sample = predictions[["predicted_production_value", "residual", "position_group"]].dropna()
-    if len(sample) > 2500:
-        sample = sample.sample(2500, random_state=7)
-    for p in positions:
-        s = sample[sample["position_group"] == p]
-        if s.empty:
-            continue
-        fig.add_trace(
-            go.Scatter(
-                x=s["predicted_production_value"],
-                y=s["residual"],
-                mode="markers",
-                name=f"{p} residuals",
-                legendgroup=p,
-                showlegend=False,
-                marker={"size": 5, "opacity": 0.5, "color": color_map[p]},
-            ),
-            row=2,
-            col=1,
-        )
-
-    fig.add_hline(y=0, line_dash="dash", line_color="#444", row=2, col=1)
-    fig.add_hrect(y0=thresholds.max_abs_mean_residual, y1=float(sample["residual"].max()) if not sample.empty else thresholds.max_abs_mean_residual,
-                  fillcolor="#d62728", opacity=0.08, line_width=0, row=2, col=1)
-    fig.add_hrect(y0=float(sample["residual"].min()) if not sample.empty else -thresholds.max_abs_mean_residual, y1=-thresholds.max_abs_mean_residual,
-                  fillcolor="#d62728", opacity=0.08, line_width=0, row=2, col=1)
-
     for p in positions:
         vals = predictions.loc[predictions["position_group"] == p, "residual"].dropna()
         fig.add_trace(
             go.Box(y=vals, name=p, marker_color=color_map[p], boxmean=True, showlegend=False),
             row=2,
-            col=2,
+            col=1,
         )
-    fig.add_hline(y=0, line_dash="dash", line_color="#444", row=2, col=2)
+    fig.add_hline(y=0, line_dash="dash", line_color="#444", row=2, col=1)
 
     metrics = _build_position_metrics(predictions)
     warnings = _warning_messages(metrics, thresholds)
@@ -230,48 +207,14 @@ def build_model_diagnostics_figure(
             showlegend=False,
         ),
         row=2,
-        col=3,
-    )
-    fig.add_hline(y=thresholds.max_mae, line_dash="dot", line_color="#d62728", row=2, col=3)
-
-    overall_slope, overall_intercept = _fit_calibration_line(predictions)
-    text_lines = [
-        f"N: {len(predictions):,}",
-        f"Overall MAE: {predictions['residual'].abs().mean():.3f}",
-        f"Cal slope: {overall_slope:.3f}",
-        f"Cal intercept: {overall_intercept:.3f}",
-        "",
-        "Best MAE:",
-    ]
-    for r in metrics.nsmallest(3, "mae").itertuples():
-        text_lines.append(f"• {r.position_group}: {r.mae:.3f}")
-    text_lines += ["", "Worst MAE:"]
-    for r in metrics.nlargest(3, "mae").itertuples():
-        text_lines.append(f"• {r.position_group}: {r.mae:.3f}")
-    if warnings:
-        text_lines += ["", "⚠ Alerts:"] + [f"• {w}" for w in warnings[:7]]
-    else:
-        text_lines += ["", "No threshold alerts."]
-
-    fig.add_annotation(
-        x=0.68,
-        y=0.96,
-        xref="paper",
-        yref="paper",
-        text="<br>".join(text_lines),
-        align="left",
-        showarrow=False,
-        bordercolor="#9e9e9e",
-        borderwidth=1,
-        bgcolor="#f7f7f7",
-        font={"size": 10, "family": "Courier New"},
+        col=2,
     )
 
     fig.update_layout(
         title={"text": title, "x": 0.02},
         template="plotly_white",
-        width=1600,
-        height=950,
+        width=1400,
+        height=900,
         font={"size": 10},
         legend={"orientation": "h", "y": 1.06, "x": 0.01},
         margin={"l": 70, "r": 40, "t": 120, "b": 70},
@@ -279,12 +222,12 @@ def build_model_diagnostics_figure(
 
     fig.update_xaxes(title_text="Predicted (bin mean)", row=1, col=1)
     fig.update_yaxes(title_text="Observed (bin mean)", row=1, col=1)
-    fig.update_xaxes(title_text="Predicted", row=2, col=1)
     fig.update_yaxes(title_text="Residual", row=2, col=1)
-    fig.update_yaxes(title_text="Residual", row=2, col=2)
+    fig.update_xaxes(title_text="Position", tickangle=-40, row=2, col=1)
     fig.update_xaxes(title_text="Position", tickangle=-40, row=2, col=2)
-    fig.update_xaxes(title_text="Position", tickangle=-40, row=2, col=3)
-    fig.update_yaxes(title_text="MAE", row=2, col=3)
+    fig.update_yaxes(title_text="MAE", row=2, col=2)
+    fig.update_xaxes(range=[lo, hi], row=1, col=1)
+    fig.update_yaxes(range=[lo, hi], row=1, col=1)
 
     return fig, metrics, warnings
 
