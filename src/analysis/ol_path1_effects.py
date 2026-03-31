@@ -35,15 +35,36 @@ def build_ranked_ol_effects(input_path: Path = INPUT_PATH) -> pd.DataFrame:
             (effects["position_group"] == "OL") & (effects["feature"].str.endswith("_z", na=False))
         ]
         .copy()
+        .assign(
+            signal_tier=lambda d: _classify_signal_tier(
+                estimate=d["estimate"],
+                conf_low=d[ci_low_col],
+                conf_high=d[ci_high_col],
+            )
+        )
         .assign(abs_estimate=lambda d: d["estimate"].abs())
         .sort_values("abs_estimate", ascending=False)
     )
 
     return (
-        ol_ranked.loc[:, ["feature", "estimate", ci_low_col, ci_high_col, "abs_estimate"]]
+        ol_ranked.loc[:, ["feature", "estimate", ci_low_col, ci_high_col, "signal_tier", "abs_estimate"]]
         .rename(columns={ci_low_col: "conf.low", ci_high_col: "conf.high"})
         .reset_index(drop=True)
     )
+
+
+def _classify_signal_tier(
+    estimate: pd.Series, conf_low: pd.Series, conf_high: pd.Series
+) -> pd.Series:
+    """Classify model effects using confidence interval behavior around zero."""
+
+    same_sign_bounds = ((conf_low > 0) & (conf_high > 0)) | ((conf_low < 0) & (conf_high < 0))
+    directional_hint = estimate.ne(0) & ~same_sign_bounds
+
+    labels = pd.Series(pd.NA, index=estimate.index, dtype="object")
+    labels.loc[same_sign_bounds] = "Core signal"
+    labels.loc[directional_hint] = "Directional hint"
+    return labels
 
 
 def main() -> None:
